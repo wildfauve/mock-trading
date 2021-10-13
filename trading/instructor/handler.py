@@ -13,8 +13,12 @@ def create(instruction):
 def commit(client_id):
     ins_id, ins = get_instruction_from_state(client_id)
     instruction_service.commit(ins_id)
-    breakpoint()
-    pass
+    return (client_id, ins_id)
+
+def get_instruction_by_client_id(client_id):
+    ins_id, _ins = state.Instructions().get_instruction_by_id(client_id)
+    return instruction_service.get_ins_by_uuid(ins_id)
+
 
 def add_to_state(client_id, instruction):
     instruction['clientId'] = client_id

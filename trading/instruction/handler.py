@@ -1,16 +1,19 @@
 from pyfuncify import monad
 import uuid
 
-from .domain.instruction import Instruction, Instructions
+from .domain import instruction as domain
 from ..broker import handler as broker_service
 
 
 def offer(instruction):
-    return monad.Right(instruction) >> assign_id >> offer_instruction >> create_result
+    return monad.Right(instruction) >> assign_id >> offer_instruction >> offer_result
 
 
 def commit(ins_id):
-    return monad.Right(ins_id) >> find >> instruction_submitted_event
+    return monad.Right(ins_id) >> find >> instruction_submitted_event >> update_ins_to_in_submittment
+
+def get_ins_by_uuid(ins_id):
+    return domain.find_by_id(ins_id)
 
 def assign_id(instruction):
     instruction['uuid'] = unique_id()
@@ -18,21 +21,26 @@ def assign_id(instruction):
 
 
 def offer_instruction(instruction):
-    ins = Instruction(uuid=instruction['uuid'], instruction=instruction, state='created')
-    Instructions().add(ins)
+    ins = domain.Instruction(uuid=instruction['uuid'], instruction=instruction, state='created')
+    domain.create(ins)
     return monad.Right(ins)
 
 
-def create_result(instruction):
+def offer_result(instruction):
     return ('ok', instruction.uuid)
 
 
-def find(ins_id) -> Instruction:
-    return monad.Right(Instructions().find_by_id(ins_id))
+def find(ins_id) -> domain.Instruction:
+    return monad.Right(domain.find_by_id(ins_id))
 
 def instruction_submitted_event(ins):
-    broker_service.submitted_event(ins)
-    return monad.Right('ok')
+    result, cord_uuid = broker_service.event_instruction_submitted(ins)
+    domain.add_cord_uuid(ins, cord_uuid)
+    return monad.Right(ins)
+
+def update_ins_to_in_submittment(ins):
+    domain.state_transition_ins_to_in_submittment(ins)
+    return monad.Right(ins)
 
 
 def unique_id():

@@ -7,6 +7,7 @@ authors = ["Col Perks <wild.fauve@gmail.com>"]
 [tool.poetry.dependencies]
 python = "^3.9"
 pyfuncify = {git = "https://github.com/wildfauve/pyfuncify.git", rev = "main"}
+pynamodb = "^5.1.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
