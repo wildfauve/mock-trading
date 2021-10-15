@@ -3,10 +3,14 @@ import uuid
 
 from .domain import instruction as domain
 from ..broker import handler as broker_service
+from ..market import handler as market_service
 
 
 def offer(instruction):
-    return monad.Right(instruction) >> assign_id >> offer_instruction >> offer_result
+    return monad.Right(instruction) >> \
+           build_instruction >> \
+           offer_instruction >> \
+           offer_result
 
 
 def commit(ins_id):
@@ -15,9 +19,21 @@ def commit(ins_id):
 def get_ins_by_uuid(ins_id):
     return domain.find_by_id(ins_id)
 
-def assign_id(instruction):
-    instruction['uuid'] = unique_id()
-    return monad.Right(instruction)
+def build_instruction(ins):
+    ins['uuid'] = unique_id()
+
+    fp = domain.financial_product_assertions(ins)
+    if fp['decision_outcome'] != 'urn:trading:decisionAssert:assertResult:success':
+        return monad.Left(ins)
+
+    ins['financialProductContext'] = fp['financial_product_context']
+
+    tc = domain.trading_client_assertions(ins)
+    if tc['decision_outcome'] != 'urn:client:decisionAssert:assertResult:success':
+        return monad.Left(ins)
+
+    ins['tradingClientContext'] = {'counterParty': tc['counter_party'], 'settlementVenue': tc['settlement_venue']}
+    return monad.Right(ins)
 
 
 def offer_instruction(instruction):

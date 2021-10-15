@@ -10,3 +10,4 @@ def test_buy_instruction(dynamo_setup, buy_instruction):
     inst = instructor.get_instruction_by_client_id(client_id)
 
     assert inst.state == 'in_submittment'
+    breakpoint()

@@ -5,6 +5,9 @@ from pymonad.tools import curry
 
 from ..model import instruction_model as model
 
+from ...trading_client import handler as trading_client_service
+from ...market import handler as market_service
+
 @dataclass
 class Instruction():
     uuid: str
@@ -43,6 +46,50 @@ def state_transition_ins_to_in_submittment(ins):
     ins.repo.state = ins.state
     ins.repo.save()
     return ins
+
+def trading_client_assertions(ins):
+    return trading_client_service.trading_client_decisions(tc_assertion_req(trading_client_ctx(ins)))
+
+
+def financial_product_assertions(ins):
+    return market_service.financial_product_decisions(fp_assertion_req(ins['financialProduct'], fp_ctx(ins)))
+
+
+def tc_assertion_req(tc_ctx):
+    return {
+        "tradingClient": {"id":  tc_ctx['trading_client']['id']},
+        "context": {
+            "tradingJurisdiction": tc_ctx['trading_jurisdiction'],
+            "contract": {"id": tc_ctx['contract']['id']}
+            },
+        "decisions": ["urn:client:decision:tradeable", "urn:client:decision:settleable"]
+    }
+
+def fp_assertion_req(fp, fp_ctx):
+    return {
+        "financialProduct": fp,
+        "context": fp_ctx,
+        "decisions": ["urn:trading:decision:instrumentInstructable"]
+    }
+
+def trading_client_ctx(ins):
+    return {
+        'trading_client': ins['instructingParties']['tradingParty'],
+        'contract': ins['contract'],
+        'trading_jurisdiction': instructing_trading_jurisdiction(ins['financialProduct'])
+    }
+
+def fp_ctx(ins):
+    return {
+        "action": ins['action'],
+        "price": ins['strategy']['price'],
+        "venueStrategy": ins['strategy']['channelStrategy'],
+        "expiry": ins['strategy']['inForceStrategy']['expiry'],
+        "inForce": ins['strategy']['inForceStrategy']['inForce']
+    }
+
+def instructing_trading_jurisdiction(fp):
+    return fp['tradingJurisdiction']
 
 def pk(uuid):
     return "CINS#{}".format(uuid)

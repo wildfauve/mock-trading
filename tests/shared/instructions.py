@@ -23,12 +23,12 @@ def buy_instruction():
             }
         },
         'contract': {
-            'id': '<uuid>',
+            'id': 'client_1_contract_direct',
             'businessUnit': 'DIRECT'
         },
         'financialProduct': {
-            'id': 'fp-001',
-            'tradingJurisdiction': 'urn:common:iso3166Country:AUS'
+            'id': 'id:fp:spk',
+            'tradingJurisdiction': 'urn:common:iso3166Country:NZL'
         },
         'strategy': {
             'execution': 'urn:trading:executionStrategy:limit',
